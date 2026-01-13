@@ -157,8 +157,8 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen text-white overflow-hidden font-sans">
-      {/* <WorldBackground /> */}
-      <div className="relative z-10 flex flex-col min-h-screen bg-black/40 backdrop-blur-sm">
+      <WorldBackground />
+      <div className="relative z-10 flex flex-col min-h-screen bg-black/40 ">
         <header className="p-6 border-b border-white/10 flex flex-col md:flex-row gap-4 justify-between items-center bg-black/20">
           <div className="flex items-center gap-2">
             <Speech className="text-teal-400 w-8 h-8" />
