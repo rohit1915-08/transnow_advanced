@@ -4,8 +4,7 @@
 
 **TransNow** is a next-generation real-time translator that breaks language barriers with zero latency. It combines state-of-the-art AI models (Whisper & Llama 3) with a stunning 3D interactive UI to deliver instant, accurate, and voice-enabled translations.
 
-![TransNow Demo](public/demo-screenshot.png)
-_(Replace with your actual screenshot)_
+demo: https://transnow-advanced.vercel.app/
 
 ## Features
 
