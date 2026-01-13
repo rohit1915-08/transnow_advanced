@@ -1,65 +1,264 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Mic, Volume2, Loader2, Globe, Speech } from "lucide-react";
+import WorldBackground from "@/components/WorldBackground";
 
 export default function Home() {
+  const [text, setText] = useState<string>("");
+  const [translation, setTranslation] = useState<string>("");
+  const [targetLangCode, setTargetLangCode] = useState<string>("hi-IN");
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length) setVoices(v);
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
+
+  const supportedLanguages = [
+    { code: "hi-IN", name: "Hindi (India)" },
+    { code: "bn-IN", name: "Bengali (India)" },
+    { code: "ta-IN", name: "Tamil (India)" },
+    { code: "te-IN", name: "Telugu (India)" },
+    { code: "mr-IN", name: "Marathi (India)" },
+    { code: "gu-IN", name: "Gujarati (India)" },
+    { code: "kn-IN", name: "Kannada (India)" },
+    { code: "ml-IN", name: "Malayalam (India)" },
+    { code: "pa-IN", name: "Punjabi (India)" },
+    { code: "en-US", name: "English (USA)" },
+    { code: "es-ES", name: "Spanish (Spain)" },
+    { code: "fr-FR", name: "French (France)" },
+    { code: "de-DE", name: "German (Germany)" },
+    { code: "ja-JP", name: "Japanese (Japan)" },
+    { code: "zh-CN", name: "Chinese (Mandarin)" },
+    { code: "ru-RU", name: "Russian" },
+    { code: "ar-SA", name: "Arabic" },
+  ];
+
+  const speak = (txt: string) => {
+    if (!txt) return;
+
+    const voice =
+      voices.find((v) => v.lang === targetLangCode) ||
+      voices.find((v) => v.lang.startsWith(targetLangCode.split("-")[0]));
+
+    if (voice) {
+      console.log("Using local browser voice:", voice.name);
+      const utterance = new SpeechSynthesisUtterance(txt);
+      utterance.voice = voice;
+      utterance.lang = targetLangCode;
+      utterance.rate = 0.9;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+
+    console.log("Local voice missing. Fetching from Proxy...");
+    const langBase = targetLangCode.split("-")[0];
+    const url = `/api/tts?text=${encodeURIComponent(txt)}&lang=${langBase}`;
+    const audio = new Audio(url);
+    audio.play().catch((e) => console.error("Playback failed:", e));
+  };
+
+  const getMimeType = () => {
+    const types = ["audio/webm", "audio/mp4", "audio/ogg", "audio/wav"];
+    for (const type of types) {
+      if (
+        typeof MediaRecorder !== "undefined" &&
+        MediaRecorder.isTypeSupported(type)
+      ) {
+        return type;
+      }
+    }
+    return "audio/webm";
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+
+      const mimeType = getMimeType();
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        const extension = mimeType
+          .split("/")[1]
+          .replace("codecs=opus", "")
+          .replace(";", "");
+        await processAudio(audioBlob, extension);
+        stream.getTracks().forEach((t) => t.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setText("");
+      setTranslation("");
+    } catch (e) {
+      alert("Mic Error. Check Permissions.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsProcessing(true);
+    }
+  };
+
+  const processAudio = async (blob: Blob, extension: string) => {
+    const formData = new FormData();
+    formData.append("file", blob, `recording.${extension}`);
+
+    const selectedLangObj = supportedLanguages.find(
+      (l) => l.code === targetLangCode
+    );
+    formData.append(
+      "language",
+      selectedLangObj ? selectedLangObj.name : "English"
+    );
+
+    try {
+      const res = await fetch("/api/process-audio", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      setText(data.original);
+      setTranslation(data.translated);
+      speak(data.translated);
+    } catch (e: any) {
+      console.error(e);
+      setText(`Error: ${e.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="relative min-h-screen text-white overflow-hidden font-sans">
+      <WorldBackground />
+      <div className="relative z-10 flex flex-col min-h-screen bg-black/40 backdrop-blur-sm">
+        <header className="p-6 border-b border-white/10 flex flex-col md:flex-row gap-4 justify-between items-center bg-black/20">
+          <div className="flex items-center gap-2">
+            <Speech className="text-teal-400 w-8 h-8" />
+
+            <h1 className="text-2xl font-bold tracking-tighter">
+              Trans<span className="text-teal-400">Now</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/60 uppercase tracking-widest">
+              Translate To:
+            </span>
+            <select
+              value={targetLangCode}
+              onChange={(e) => setTargetLangCode(e.target.value)}
+              className="bg-black/50 border border-teal-500/30 text-teal-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal-400 transition-all cursor-pointer hover:bg-black/70"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              {supportedLanguages.map((lang) => (
+                <option
+                  key={lang.code}
+                  value={lang.code}
+                  className="bg-neutral-900 text-white"
+                >
+                  {lang.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center p-6 gap-12">
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isProcessing}
+            className={`
+                relative w-32 h-32 rounded-full flex items-center justify-center
+                transition-all duration-300 shadow-[0_0_50px_rgba(20,184,166,0.3)]
+                ${
+                  isRecording
+                    ? "bg-red-500/90 scale-110"
+                    : "bg-teal-500/20 hover:bg-teal-500/30"
+                }
+                ${isProcessing ? "animate-pulse cursor-not-allowed" : ""}
+                border border-white/20 backdrop-blur-md
+              `}
+          >
+            {isProcessing ? (
+              <Loader2 className="w-10 h-10 animate-spin text-teal-200" />
+            ) : (
+              <Mic
+                className={`w-10 h-10 ${
+                  isRecording ? "text-white" : "text-teal-400"
+                }`}
+              />
+            )}
+            {isRecording && (
+              <div className="absolute inset-0 rounded-full border border-red-400 animate-ping opacity-50" />
+            )}
+          </button>
+
+          <p className="text-teal-200/80 tracking-widest uppercase text-sm font-semibold">
+            {isRecording
+              ? "Listening..."
+              : isProcessing
+              ? "Translating..."
+              : "Tap to Speak"}
           </p>
+
+          <div className="grid md:grid-cols-2 gap-6 w-full max-w-5xl">
+            <div className="min-h-50 p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md flex flex-col transition-all hover:bg-white/10">
+              <span className="text-xs uppercase text-white/40 mb-4 font-bold tracking-wider">
+                Original
+              </span>
+              <p className="text-xl text-white/90 leading-relaxed font-light">
+                {text || "..."}
+              </p>
+            </div>
+
+            <div className="min-h-50 p-6 rounded-2xl border border-teal-500/30 bg-teal-900/10 backdrop-blur-md flex flex-col transition-all hover:bg-teal-900/20">
+              <div className="flex justify-between items-start mb-4">
+                <span className="text-xs uppercase text-teal-400/60 font-bold tracking-wider">
+                  {
+                    supportedLanguages.find((l) => l.code === targetLangCode)
+                      ?.name
+                  }
+                </span>
+                {translation && (
+                  <Volume2
+                    onClick={() => speak(translation)}
+                    className="w-5 h-5 text-teal-400 cursor-pointer hover:text-white"
+                  />
+                )}
+              </div>
+              <p className="text-2xl text-teal-50 font-medium leading-relaxed">
+                {translation || "..."}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
