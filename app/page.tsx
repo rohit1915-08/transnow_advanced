@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Volume2, Loader2, Globe, Speech } from "lucide-react";
+import { Mic, Volume2, Loader2, Speech, Snowflake } from "lucide-react";
 import WorldBackground from "@/components/WorldBackground";
 
 export default function Home() {
@@ -11,6 +11,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [isSnowing, setIsSnowing] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -157,35 +158,67 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen text-white overflow-hidden font-sans">
-      <WorldBackground />
+      <WorldBackground isSnowing={isSnowing} />
       <div className="relative z-10 flex flex-col min-h-screen bg-black/40 ">
         <header className="p-6 border-b border-white/10 flex flex-col md:flex-row gap-4 justify-between items-center bg-black/20">
           <div className="flex items-center gap-2">
-            <Speech className="text-teal-400 w-8 h-8" />
-
+            <Speech className="text-blue-400 w-8 h-8" />
             <h1 className="text-2xl font-bold tracking-tighter">
-              Trans<span className="text-teal-400">Now</span>
+              Trans<span className="text-blue-400">Now</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-white/60 uppercase tracking-widest">
-              Translate To:
-            </span>
-            <select
-              value={targetLangCode}
-              onChange={(e) => setTargetLangCode(e.target.value)}
-              className="bg-black/50 border border-teal-500/30 text-teal-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal-400 transition-all cursor-pointer hover:bg-black/70"
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSnowing(!isSnowing)}
+              className={`
+                group relative h-8 w-14 rounded-full transition-all duration-300 border border-white/10 cursor-pointer
+                ${
+                  isSnowing
+                    ? "bg-teal-900/40 border-blue-500/30"
+                    : "bg-neutral-900/50 hover:bg-neutral-800"
+                }
+              `}
+              title="Toggle Snow"
             >
-              {supportedLanguages.map((lang) => (
-                <option
-                  key={lang.code}
-                  value={lang.code}
-                  className="bg-neutral-900 text-white"
-                >
-                  {lang.name}
-                </option>
-              ))}
-            </select>
+              <div
+                className={`
+                  absolute top-1 h-6 w-6 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center
+                  ${
+                    isSnowing
+                      ? "left-7 bg-blue-400"
+                      : "left-1 bg-neutral-600 group-hover:bg-neutral-500"
+                  }
+                `}
+              >
+                <Snowflake
+                  className={`w-3.5 h-3.5 ${
+                    isSnowing
+                      ? "text-black animate-spin-slow"
+                      : "text-neutral-300"
+                  }`}
+                />
+              </div>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white/60 uppercase tracking-widest hidden md:inline">
+                Translate To:
+              </span>
+              <select
+                value={targetLangCode}
+                onChange={(e) => setTargetLangCode(e.target.value)}
+                className="bg-black/50 border border-blue-500/30 text-blue-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-400 transition-all cursor-pointer hover:bg-black/70"
+              >
+                {supportedLanguages.map((lang) => (
+                  <option
+                    key={lang.code}
+                    value={lang.code}
+                    className="bg-neutral-900 text-white"
+                  >
+                    {lang.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </header>
 
@@ -195,31 +228,31 @@ export default function Home() {
             disabled={isProcessing}
             className={`
                 relative w-32 h-32 rounded-full flex items-center justify-center
-                transition-all duration-300 shadow-[0_0_50px_rgba(20,184,166,0.3)]
+                transition-all duration-300s]
                 ${
                   isRecording
-                    ? "bg-red-500/90 scale-110"
-                    : "bg-teal-500/20 hover:bg-teal-500/30"
+                    ? "bg-blue-900/90 scale-110"
+                    : "bg-white-500/20 hover:bg-white-500/30"
                 }
                 ${isProcessing ? "animate-pulse cursor-not-allowed" : ""}
                 border border-white/20 backdrop-blur-md
               `}
           >
             {isProcessing ? (
-              <Loader2 className="w-10 h-10 animate-spin text-teal-200" />
+              <Loader2 className="w-10 h-10 animate-spin text-white-200" />
             ) : (
               <Mic
                 className={`w-10 h-10 ${
-                  isRecording ? "text-white" : "text-teal-400"
+                  isRecording ? "text-white" : "text-blue-400"
                 }`}
               />
             )}
             {isRecording && (
-              <div className="absolute inset-0 rounded-full border border-red-400 animate-ping opacity-50" />
+              <div className="absolute inset-0 rounded-full border border-white animate-ping opacity-50" />
             )}
           </button>
 
-          <p className="text-teal-200/80 tracking-widest uppercase text-sm font-semibold">
+          <p className="text-white/80 tracking-widest uppercase text-sm font-semibold">
             {isRecording
               ? "Listening..."
               : isProcessing
@@ -237,9 +270,9 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="min-h-50 p-6 rounded-2xl border border-teal-500/30 bg-teal-900/10 backdrop-blur-md flex flex-col transition-all hover:bg-teal-900/20">
+            <div className="min-h-50 p-6 rounded-2xl border border-blue-500/30 bg-blue-900/10 backdrop-blur-md flex flex-col transition-all hover:bg-blue-900/20">
               <div className="flex justify-between items-start mb-4">
-                <span className="text-xs uppercase text-teal-400/60 font-bold tracking-wider">
+                <span className="text-xs uppercase text-blue-400/60 font-bold tracking-wider">
                   {
                     supportedLanguages.find((l) => l.code === targetLangCode)
                       ?.name
@@ -248,11 +281,11 @@ export default function Home() {
                 {translation && (
                   <Volume2
                     onClick={() => speak(translation)}
-                    className="w-5 h-5 text-teal-400 cursor-pointer hover:text-white"
+                    className="w-5 h-5 text-blue-400 cursor-pointer hover:text-white"
                   />
                 )}
               </div>
-              <p className="text-2xl text-teal-50 font-medium leading-relaxed">
+              <p className="text-2xl text-blue-50 font-medium leading-relaxed">
                 {translation || "..."}
               </p>
             </div>
