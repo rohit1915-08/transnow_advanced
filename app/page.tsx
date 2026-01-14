@@ -174,7 +174,7 @@ export default function Home() {
             <button
               onClick={() => setIsSnowing(!isSnowing)}
               className={`
-                group relative h-8 w-14 rounded-full transition-all duration-300 border border-white/10 cursor-pointer
+                group relative h-8 w-8 rounded-full transition-all duration-300 border border-white/10 cursor-pointer
                 ${
                   isSnowing
                     ? "bg-teal-900/40 border-blue-500/30"
@@ -188,7 +188,7 @@ export default function Home() {
                   absolute top-1 h-6 w-6 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center
                   ${
                     isSnowing
-                      ? "left-7 bg-blue-400"
+                      ? "left-1 bg-blue-400"
                       : "left-1 bg-neutral-600 group-hover:bg-neutral-500"
                   }
                 `}
