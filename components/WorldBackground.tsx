@@ -72,7 +72,7 @@ function SnowPile() {
     if (!ref.current) return;
     const visibleCount = Math.min(
       count,
-      Math.floor(state.clock.elapsedTime * 100)
+      Math.floor(state.clock.elapsedTime * 90)
     );
     ref.current.geometry.setDrawRange(0, visibleCount);
   });
