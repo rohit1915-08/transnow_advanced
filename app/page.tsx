@@ -168,6 +168,9 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <span className="hidden md:inline text-xs font-bold text-white/50 uppercase tracking-widest">
+              Snow Mode
+            </span>
             <button
               onClick={() => setIsSnowing(!isSnowing)}
               className={`
