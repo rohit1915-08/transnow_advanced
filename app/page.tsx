@@ -168,7 +168,7 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="  text-xs font-bold text-white/50 uppercase tracking-widest">
+            <span className=" text-xs font-bold text-white/50 uppercase tracking-widest">
               Snow Mode
             </span>
             <button
@@ -203,7 +203,7 @@ export default function Home() {
               </div>
             </button>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-white/60 uppercase tracking-widest ">
+              <span className="text-sm text-white/60 uppercase tracking-widest hidden md:inline">
                 Translate To:
               </span>
               <select
