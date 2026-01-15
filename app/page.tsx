@@ -296,7 +296,7 @@ export default function Home() {
         </div>
 
         <div className="absolute bottom-4 right-4 z-50">
-          <p className="text-[10px] md:text-xs font-mono text-white/50 hover:text-white/60 transition-colors select-none">
+          <p className="text-[10px] md:text- font-mono text-white/50 hover:text-white/60 transition-colors select-none">
             © @rohit1915-08
           </p>
         </div>
